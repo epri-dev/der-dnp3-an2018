@@ -1,0 +1,16 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "g++ -std=c++11 -g -pthread der-an-2018/main.cpp -o der-an-2018/der der-an-2018/DEROutstation.cpp der-an-2018/DERCommandHandler.cpp der-an-2018/DERCommandHandlerCallbackDefault.cpp der-an-2018/CSVReaderMeasurement.cpp der-an-2018/GenericCurve.cpp der-an-2018/Schedule.cpp -lasiodnp3 -lasiopal -lopendnp3 -lopenpal",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
