@@ -24,4 +24,4 @@ Navigate to the ~/der-an-2018 directory and run the following command from the t
 
 ## Documentation
 
-The detailed user manual can be found [here](https://www.epri.com)
+The detailed user manual can be found [here](https://www.epri.com/#/pages/product/3002015355/)
