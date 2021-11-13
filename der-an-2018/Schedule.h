@@ -10,7 +10,7 @@ Redistribution and use in source and binary forms, with or without modification,
 #ifndef SCHEDULE_H
 #define SCHEDULE_H
 
-#include <sys/types.h>
+#include <cstdint>
 #include <time.h> 
 #include <iostream>
 #include <chrono>
@@ -19,23 +19,23 @@ Redistribution and use in source and binary forms, with or without modification,
 namespace der{
     class Schedule{
         private:
-            static const u_int16_t SCHEDULE_IDENTITY = 462;
-			static const u_int16_t SCHEDULE_PRIORITY = 463;
-			static const u_int16_t SCHEDULE_TYPE = 464;
-			static const u_int16_t SCHEDULE_START_DATE = 465;
-			static const u_int16_t SCHEDULE_START_TIME = 466;
-			static const u_int16_t SCHEDULE_REPEAT_INTERVAL = 467;
-			static const u_int16_t SCHEDULE_REPEAT_INTERVAL_UNITS = 468;
-			static const u_int16_t SCHEDULE_NUM_POINTS = 469;
+            static const uint16_t SCHEDULE_IDENTITY = 462;
+			static const uint16_t SCHEDULE_PRIORITY = 463;
+			static const uint16_t SCHEDULE_TYPE = 464;
+			static const uint16_t SCHEDULE_START_DATE = 465;
+			static const uint16_t SCHEDULE_START_TIME = 466;
+			static const uint16_t SCHEDULE_REPEAT_INTERVAL = 467;
+			static const uint16_t SCHEDULE_REPEAT_INTERVAL_UNITS = 468;
+			static const uint16_t SCHEDULE_NUM_POINTS = 469;
 
-            static const u_int16_t MAX_SCHEDULE_INDEX = 669;
-            static const u_int16_t NUM_PARAMS = 209;
+            static const uint16_t MAX_SCHEDULE_INDEX = 669;
+            static const uint16_t NUM_PARAMS = 209;
             float m_parameters[NUM_PARAMS] = {0};
             time_t timer;
             int daysSinceEpoch ;
             
         public:
-            void SetParameter(u_int16_t index, float value);
+            void SetParameter(uint16_t index, float value);
             float *GetActiveScheduleParameters();
             bool ValidateSchedule(); 
     };

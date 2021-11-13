@@ -11,9 +11,9 @@ Redistribution and use in source and binary forms, with or without modification,
 
 namespace der{
 
-    void GenericCurve::SetParameter(u_int16_t index, float value){
+    void GenericCurve::SetParameter(uint16_t index, float value){
 
-        u_int16_t i = NUM_PARAMS - (MAX_CURVE_INDEX - index) - 1;
+        uint16_t i = NUM_PARAMS - (MAX_CURVE_INDEX - index) - 1;
 
         if (i < 0 || i >= NUM_PARAMS){
             throw "Invalid Curve Index";

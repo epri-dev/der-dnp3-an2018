@@ -31,8 +31,10 @@ opendnp3::CommandStatus DERCommandHandler::Select(const opendnp3::ControlRelayOu
     return cmdStat;
 }
 
+const uint8_t ONLINE = 0x81; 
+
 /* Handling OPERATE commands for Binary Outputs */
-opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayOutputBlock& command, uint16_t index, opendnp3::OperateType opType){
+opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayOutputBlock& command, uint16_t index, IUpdateHandler& handler, opendnp3::OperateType opType){
         opendnp3::CommandStatus cmdStat = opendnp3::CommandStatus::NOT_SUPPORTED;
 
         if(index < 0 || index >= MAX_BOPOINTS)
@@ -42,16 +44,16 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
     if(BOPoints[index].Supported){
 
         //Update BinaryOutputStattus
-        builder.Update(BinaryOutputStatus(command.functionCode == opendnp3::ControlCode::LATCH_ON, (u_int8_t) BinaryQuality::ONLINE) , index);
+        builder.Update(BinaryOutputStatus(command.opType == opendnp3::OperationType::LATCH_ON, Flags(ONLINE)) , index);
         //Updated mapped Binary Input
-        builder.Update(Binary(command.functionCode == opendnp3::ControlCode::LATCH_ON, (u_int8_t) BinaryQuality::ONLINE) , BOPoints[index].MappedInput);
+        builder.Update(Binary(command.opType == opendnp3::OperationType::LATCH_ON, Flags(ONLINE)) , BOPoints[index].MappedInput);
 
         if(index == BO_ENTER_SERVICE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 m_callbacks->EnableEnterService(m_VoltageHighLimit, m_VoltageLowLimit, m_FrequencyHighLimit, m_FrequencyLowLimit, m_DERStartDelay, m_DERStartTimeWindow, m_DERStartRampUpTime);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }           
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisableEnterService();
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -59,11 +61,11 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_POWER_FACTOR_DISCHARGING){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 m_powerFactorExcitationDischarging = true;
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }            
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_powerFactorExcitationDischarging = false;
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -71,11 +73,11 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_POWER_FACTOR_CHARGING){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 m_powerFactorExcitationCharging = true;
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }         
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_powerFactorExcitationCharging = false;
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -83,21 +85,21 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_DYNAMIC_REACTIVE_CURRENT_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }      
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
             else /* Raise FORMAT_ERROR incase the control code is not supported */
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == B0_LIMIT_ACTIVE_POWER){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){             
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 m_callbacks->EnableActiveLimitPower(m_activePowerLimitDisCharge, m_activePowerLimitCharge);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }          
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisableActiveLimitPower();
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -105,22 +107,22 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == B0_CHARGE_DISCHARGE_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }            
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
             else /* Raise FORMAT_ERROR incase the control code is not supported */
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_VOLT_WATT_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 if(m_activeCurve != nullptr)
                     m_callbacks->EnableCurve(m_activeCurve);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }            
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisableCurve(m_activeCurve);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -128,11 +130,11 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_CONST_VAR_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 m_callbacks->EnableConstantVARs(m_constReactivePower);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }           
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisableConstantVARs();
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -140,11 +142,11 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_CONST_POWER_FACTOR){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 m_callbacks->EnablePowerFactor(m_powerFactorDischarging, m_powerFactorCharging, m_powerFactorExcitationDischarging, m_powerFactorExcitationCharging);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }          
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisablePowerFactor();
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -152,12 +154,12 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_VOLT_VAR_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 if(m_activeCurve != nullptr)
                     m_callbacks->EnableCurve(m_activeCurve);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }        
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisableCurve(m_activeCurve);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -165,12 +167,12 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_WATT_VAR_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 if(m_activeCurve != nullptr)
                     m_callbacks->EnableCurve(m_activeCurve);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }            
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 m_callbacks->DisableCurve(m_activeCurve);
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -178,27 +180,27 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == BO_EVENT_BASED_DYNAMIC_REACTIVE_CURRENT_MODE){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON) {
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }            
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF) {
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
             else /* Raise FORMAT_ERROR incase the control code is not supported */
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == B0_CHARGE_DISCHARGE_USE_RAMP_RATES){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON) {
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }            
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                 cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
             else /* Raise FORMAT_ERROR incase the control code is not supported */
                 cmdStat = opendnp3::CommandStatus::FORMAT_ERROR; 
         }
         else if (index == B0_SET_SELECTED_SCHEDULE_READY){
-            if(command.functionCode == opendnp3::ControlCode::LATCH_ON || command.functionCode == opendnp3::ControlCode::PULSE_ON || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON){
+            if(command.opType == opendnp3::OperationType::LATCH_ON || command.opType == opendnp3::OperationType::PULSE_ON){
                 bool ValidSchedule = false;
                 ValidSchedule = m_activeSchedule->ValidateSchedule();
                 if(ValidSchedule)
@@ -214,9 +216,9 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
                 }
 
                 //Update BI109 Selected Schedule is Validated Bit 
-                builder.Update(Binary(true, (u_int8_t) BinaryQuality::ONLINE) , BI_SELECTED_SCHEDULE_VALIDATED );
+                builder.Update(Binary(true, Flags(ONLINE)), BI_SELECTED_SCHEDULE_VALIDATED);
             }                        
-            else if (command.functionCode == opendnp3::ControlCode::LATCH_OFF || command.functionCode == opendnp3::ControlCode::PULSE_OFF || command.functionCode == opendnp3::ControlCode::CLOSE_PULSE_ON_CANCEL || command.functionCode == opendnp3::ControlCode::TRIP_PULSE_ON_CANCEL){
+            else if (command.opType == opendnp3::OperationType::LATCH_OFF || command.opType == opendnp3::OperationType::PULSE_OFF){
                     m_callbacks->DisableSchedule(m_activeSchedule);
                     cmdStat = opendnp3::CommandStatus::SUCCESS;
             }
@@ -226,7 +228,7 @@ opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::ControlRelayO
     }
     else /* Raise NOT_SUPPORTED incase the device doesn't support the funtion or mode */
     {
-        builder.Update(BinaryOutputStatus(command.functionCode == opendnp3::ControlCode::LATCH_ON, 0) , index);
+        builder.Update(BinaryOutputStatus(command.opType == opendnp3::OperationType::LATCH_ON, Flags(ONLINE)) , index);
         cmdStat = opendnp3::CommandStatus::NOT_SUPPORTED;
     }
     m_outstation->Apply(builder.Build());
@@ -240,7 +242,7 @@ opendnp3::CommandStatus DERCommandHandler::Select(const opendnp3::AnalogOutputIn
 }
 
 /* Handling  OPERATE command for 16-bit AOs */
-opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputInt16& command, uint16_t index, opendnp3::OperateType opType){
+opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputInt16& command, uint16_t index, IUpdateHandler& handler, opendnp3::OperateType opType){
     opendnp3::AnalogOutputInt32 t(command.value);
     return DirectOperate (t, index, opType);
 }
@@ -251,7 +253,7 @@ opendnp3::CommandStatus DERCommandHandler::Select(const opendnp3::AnalogOutputIn
 }
 
 /* Handling OPERATE command for 32-bit AOs */
-opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputInt32& command, uint16_t index, opendnp3::OperateType opType){
+opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputInt32& command, uint16_t index, IUpdateHandler& handler, opendnp3::OperateType opType){
     opendnp3::AnalogOutputInt32 t(command.value);
     return DirectOperate (t, index, opType);
 }
@@ -260,7 +262,7 @@ opendnp3::CommandStatus DERCommandHandler::Select(const opendnp3::AnalogOutputFl
     return CommandStatus::NOT_SUPPORTED;
 }
 
-opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputFloat32& command, uint16_t index, opendnp3::OperateType opType) {
+opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputFloat32& command, uint16_t index, IUpdateHandler& handler, opendnp3::OperateType opType) {
     return CommandStatus::NOT_SUPPORTED;
 }
 
@@ -270,19 +272,11 @@ opendnp3::CommandStatus DERCommandHandler::Select(const opendnp3::AnalogOutputDo
 }
 
 /* Handling OPERATE command for 64-bit AOs */
-opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputDouble64& command, uint16_t index, opendnp3::OperateType opType){
+opendnp3::CommandStatus DERCommandHandler::Operate(const opendnp3::AnalogOutputDouble64& command, uint16_t index, IUpdateHandler& handler, opendnp3::OperateType opType){
     return CommandStatus::NOT_SUPPORTED;
 }
 
-void DERCommandHandler::Start(){
-    // No Implementation
-}
-
-void DERCommandHandler::End(){
-    // No Implementation
-}
-
-void DERCommandHandler::SetOutstation(std::shared_ptr<asiodnp3::IOutstation> &value)
+void DERCommandHandler::SetOutstation(std::shared_ptr<IOutstation> &value)
 {
     m_outstation = value;
 }
@@ -309,9 +303,9 @@ opendnp3::CommandStatus DERCommandHandler::DirectOperate(const opendnp3::AnalogO
     if(AOPoints[index].Supported){
 
         //Update AnalogOutputStatus
-        builder.Update(AnalogOutputStatus((double) command.value, (u_int8_t) AnalogQuality::ONLINE) , index);
+        builder.Update(AnalogOutputStatus((double) command.value, Flags(ONLINE)) , index);
         //Update Mapped Analog Input
-        builder.Update(Analog((double) command.value, (u_int8_t) AnalogQuality::ONLINE),AOPoints[index].MappedInput);
+        builder.Update(Analog((double) command.value, Flags(ONLINE)),AOPoints[index].MappedInput);
 
         if(index == AO_REF_VOLTS){
             //Data Range validation
@@ -930,7 +924,7 @@ opendnp3::CommandStatus DERCommandHandler::DirectOperate(const opendnp3::AnalogO
     }
     else
     {
-        builder.Update(AnalogOutputStatus((double) command.value, 0) , index);
+        builder.Update(AnalogOutputStatus((double) command.value, Flags(ONLINE)) , index);
         cmdStat = opendnp3::CommandStatus::NOT_SUPPORTED;
     }
     m_outstation->Apply(builder.Build());
@@ -947,15 +941,15 @@ opendnp3::CommandStatus DERCommandHandler::DirectOperate(const opendnp3::AnalogO
         for (int index = 245; index <= 448; index++){
             int i = NUM_PARAMS_CURVES - (MAX_CURVE_INDEX - index) - 1;
             //Update AnalogOutputStatus
-            builder.Update(AnalogOutputStatus((double) m_activeCurveParams[i], (u_int8_t) AnalogQuality::ONLINE) , index);
+            builder.Update(AnalogOutputStatus((double) m_activeCurveParams[i], Flags(ONLINE)) , index);
             //Update Mapped Analog Input
-            builder.Update(Analog((double) m_activeCurveParams[i], (u_int8_t) AnalogQuality::ONLINE),AOPoints[index].MappedInput);
+            builder.Update(Analog((double) m_activeCurveParams[i], Flags(ONLINE)),AOPoints[index].MappedInput);
         }      
         m_outstation->Apply(builder.Build());
     }
 
     /* Updates the “Selected Curve is Referenced by a Mode” ( BI107) based on the curve state */
-    void DERCommandHandler::UpdateSelectedCurveState(u_int8_t curveIndex){
+    void DERCommandHandler::UpdateSelectedCurveState(uint8_t curveIndex){
         std::cout << "Updating the “Selected Curve is Referenced by a Mode” ( BI107) based on the curve state" << std::endl;
         float *m_activeCurveParams = m_activeCurve->GetActiveCurveParameters();
  
@@ -977,10 +971,10 @@ opendnp3::CommandStatus DERCommandHandler::DirectOperate(const opendnp3::AnalogO
         //Check if any of the DER modes reference the curve index
         if (derRef) {
             //Update “Selected Curve is Referenced by a Mode” ( BI107)
-            builder.Update(Binary(true, (u_int8_t) BinaryQuality::ONLINE) , BI_SELECTED_CURVE_IS_REFERENCED_BY_A_MODE);
+            builder.Update(Binary(true, Flags(ONLINE)) , BI_SELECTED_CURVE_IS_REFERENCED_BY_A_MODE);
         }
         else{
-            builder.Update(Binary(false, (u_int8_t) BinaryQuality::ONLINE) , BI_SELECTED_CURVE_IS_REFERENCED_BY_A_MODE);
+            builder.Update(Binary(false, Flags(ONLINE)) , BI_SELECTED_CURVE_IS_REFERENCED_BY_A_MODE);
         }
     }
 
@@ -994,12 +988,12 @@ opendnp3::CommandStatus DERCommandHandler::DirectOperate(const opendnp3::AnalogO
         for (int index = 462; index <= 669; index++){
             int i =  NUM_PARAMS_SCHEDULE - (MAX_SCHEDULE_INDEX - index) - 1;
             //Update AnalogOutputStatus
-            builder.Update(AnalogOutputStatus((double) m_activeScheduleParams[i], (u_int8_t) AnalogQuality::ONLINE) , index);
+            builder.Update(AnalogOutputStatus((double) m_activeScheduleParams[i], Flags(ONLINE)) , index);
             //Update Mapped Analog Input
-            builder.Update(Analog((double) m_activeScheduleParams[i], (u_int8_t) AnalogQuality::ONLINE),AOPoints[index].MappedInput);
+            builder.Update(Analog((double) m_activeScheduleParams[i], Flags(ONLINE)),AOPoints[index].MappedInput);
         }      
 
         //Update BI109 Selected Schedule is Validated Bit 
-        builder.Update(Binary(false, (u_int8_t) BinaryQuality::ONLINE) , BI_SELECTED_SCHEDULE_VALIDATED );
+        builder.Update(Binary(false, Flags(ONLINE)), BI_SELECTED_SCHEDULE_VALIDATED );
         m_outstation->Apply(builder.Build());
     }

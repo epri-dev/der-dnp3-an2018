@@ -10,18 +10,9 @@ Redistribution and use in source and binary forms, with or without modification,
 #ifndef DER_OUTSTATION_H
 #define DER_OUTSTATION_H
 
-#include <asiodnp3/DNP3Manager.h>
-#include <asiodnp3/PrintingSOEHandler.h>
-#include <asiodnp3/PrintingChannelListener.h>
-#include <asiodnp3/ConsoleLogger.h>
-#include <asiodnp3/UpdateBuilder.h>
+#include <opendnp3/DNP3Manager.h>
 
-#include <asiopal/UTCTimeSource.h>
-#include <opendnp3/outstation/SimpleCommandHandler.h>
-
-#include <opendnp3/outstation/IUpdateHandler.h>
-
-#include <opendnp3/LogLevels.h>
+#include <opendnp3/logging/LogLevels.h>
 
 #include <string>
 #include <thread>
@@ -36,9 +27,6 @@ Redistribution and use in source and binary forms, with or without modification,
 
 using namespace std;
 using namespace opendnp3;
-using namespace openpal;
-using namespace asiopal;
-using namespace asiodnp3;
 
 namespace der{
     class DEROutstation{
@@ -51,7 +39,7 @@ namespace der{
                 DoubleBit dbit = DoubleBit::DETERMINED_OFF;
                 uint8_t octetStringValue = 1;
             };
-            std::shared_ptr<asiodnp3::IOutstation> outstation;
+            std::shared_ptr<IOutstation> outstation;
             UpdateBuilder builder;
             CSVReaderMeasurement csv;
             vector<AnalogValues> aiMeas; 
