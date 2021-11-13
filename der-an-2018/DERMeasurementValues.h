@@ -10,7 +10,7 @@ Redistribution and use in source and binary forms, with or without modification,
 #ifndef DER_MEASUREMENT_VALUES_H
 #define DER_MEASUREMENT_VALUES_H
 
-#include <asiodnp3/DNP3Manager.h>
+#include <opendnp3/DNP3Manager.h>
 
 using namespace std;
 using namespace opendnp3;
@@ -21,14 +21,14 @@ namespace der{
     void ReadBinaryValues();
 
     struct AnalogValues{
-            u_int16_t index;
-            u_int8_t quality;
+            uint16_t index;
+            uint8_t quality;
             double val;
     };
 
     struct BinaryValues{
-            u_int16_t index;
-            u_int8_t quality;
+            uint16_t index;
+            uint8_t quality;
             bool val;
     };
 }

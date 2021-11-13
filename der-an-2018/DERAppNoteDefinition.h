@@ -10,30 +10,14 @@ Redistribution and use in source and binary forms, with or without modification,
 #ifndef DER_APP_NOTE_DEFINITION_H
 #define DER_APP_NOTE_DEFINITION_H
 
-#include <asiodnp3/DNP3Manager.h>
-/*#include <asiodnp3/PrintingSOEHandler.h>
-#include <asiodnp3/PrintingChannelListener.h>
-#include <asiodnp3/ConsoleLogger.h>
-#include <asiodnp3/UpdateBuilder.h>
-
-#include <asiopal/UTCTimeSource.h>
-#include <opendnp3/outstation/SimpleCommandHandler.h>
-
-#include <opendnp3/outstation/IUpdateHandler.h>
-
-#include <opendnp3/LogLevels.h>*/
+#include <opendnp3/DNP3Manager.h>
 
 #include <string>
 #include <thread>
 #include <iostream>
 
-//#include "DERAppNoteDefinition.h"
-
 using namespace std;
 using namespace opendnp3;
-using namespace openpal;
-using namespace asiopal;
-using namespace asiodnp3; 
 
 #define MAX_AOPOINTS 670
 #define MAX_BOPOINTS 50
@@ -44,7 +28,7 @@ namespace der{
 
             /* Typedef for Data structure containing information on each analog input point */
             typedef struct {
-                u_int16_t   PointIndex;	
+                uint16_t   PointIndex;	
                 std::string NameStr;
                 int32_t     MinValue;
                 int32_t     MaxValue;
@@ -53,28 +37,28 @@ namespace der{
 
             /* Typedef for Data structure containing information on each analog output point */
             typedef struct {
-                u_int16_t   PointIndex;	
+                uint16_t   PointIndex;	
                 std::string NameStr;
                 int32_t     MinValue;
                 int32_t     MaxValue;
                 bool        Supported;
-                u_int16_t   MappedInput;
+                uint16_t   MappedInput;
             } AnalogOutputPointDefinition;
 
             /* Typedef for Data structure containing information on each binary input point */
             typedef struct {
-                u_int16_t   PointIndex;	
+                uint16_t   PointIndex;	
                 std::string NameStr;
                 PointClass  DefEvtClass;
             } BinaryInputPointDefinition;
 
             /* Typedef for Data structure containing information on each binary output point */
             typedef struct {
-                u_int16_t   PointIndex;	
+                uint16_t   PointIndex;	
                 std::string NameStr;
                 PointClass  DefEvtClass;
                 bool        Supported;
-                u_int16_t   MappedInput;
+                uint16_t   MappedInput;
             } BinaryOutputPointDefinition;
 
             const AnalogOutputPointDefinition AOPoints[MAX_AOPOINTS] =

@@ -11,7 +11,6 @@ Redistribution and use in source and binary forms, with or without modification,
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <boost/lexical_cast.hpp>
 
 using namespace der;
 
@@ -48,8 +47,8 @@ void CSVReaderMeasurement::ReadBinaryValues(vector<BinaryValues>& bMeas, string 
              values.push_back(s);
          }
          
-            u_int16_t m_index = (u_int16_t) boost::lexical_cast<int>(values[0]);
-            u_int8_t m_quality = (u_int8_t) boost::lexical_cast<int>(values[1]);
+            uint16_t m_index = std::stoi(values[0]);
+            uint16_t m_quality = std::stoi(values[1]);
             bool m_status = values[2] == "true\r" ? true: false; 
 
             //std::cout<<"Index: "<< m_index<<" Quality: " << unsigned(m_quality) << " Status: "<<std::boolalpha<<m_status<<endl;
@@ -94,9 +93,9 @@ void CSVReaderMeasurement::ReadAnalogValues(vector<AnalogValues>& aMeas, string 
 
              values.push_back(s);
          }
-            u_int16_t m_index = (u_int16_t) boost::lexical_cast<int>(values[0]);
-            u_int8_t m_quality = (u_int8_t) boost::lexical_cast<int>(values[1]);
-            double m_val = atof(values[2].c_str());
+            uint16_t m_index = std::stoi(values[0]);
+            uint8_t m_quality = std::stoi(values[1]);
+            double m_val = std::stod(values[2]);
 
             //std::cout<<"Index: "<< m_index<<" Quality: " << unsigned(m_quality) << " Value: "<<m_val<<endl;
 

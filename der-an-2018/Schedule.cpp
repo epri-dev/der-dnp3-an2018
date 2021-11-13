@@ -11,9 +11,9 @@ Redistribution and use in source and binary forms, with or without modification,
 
 namespace der{
 
-    void Schedule::SetParameter(u_int16_t index, float value){
+    void Schedule::SetParameter(uint16_t index, float value){
 
-        u_int16_t i = NUM_PARAMS - (MAX_SCHEDULE_INDEX - index) - 1;
+        uint16_t i = NUM_PARAMS - (MAX_SCHEDULE_INDEX - index) - 1;
 
         if (i < 0 || i >= NUM_PARAMS){
             throw "Invalid Schedule Index";

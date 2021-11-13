@@ -11,23 +11,23 @@ Redistribution and use in source and binary forms, with or without modification,
 #ifndef GENERIC_CURVE_H
 #define GENERIC_CURVE_H
 
-#include <sys/types.h>
+#include <cstdint>
 
 namespace der{
 
     class GenericCurve{
         public:
-            void SetParameter(u_int16_t index, float value);
+            void SetParameter(uint16_t index, float value);
             float *GetActiveCurveParameters();
             void DefaultVoltVarCurve();
         private:
-            static const u_int16_t CURVE_MODE_TYPE = 245;
-            static const u_int16_t NUM_POINTS = 246;
-            static const u_int16_t X_UNITS = 247;
-            static const u_int16_t Y_UNITS = 248;
-            static const u_int16_t MIN_CURVE_INDEX = 244; 
-            static const u_int16_t MAX_CURVE_INDEX = 448;
-            static const u_int16_t NUM_PARAMS = 205;
+            static const uint16_t CURVE_MODE_TYPE = 245;
+            static const uint16_t NUM_POINTS = 246;
+            static const uint16_t X_UNITS = 247;
+            static const uint16_t Y_UNITS = 248;
+            static const uint16_t MIN_CURVE_INDEX = 244;
+            static const uint16_t MAX_CURVE_INDEX = 448;
+            static const uint16_t NUM_PARAMS = 205;
 
             float m_parameters[NUM_PARAMS] = {0};
     };

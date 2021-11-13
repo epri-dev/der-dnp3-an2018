@@ -30,6 +30,12 @@ Redistribution and use in source and binary forms, with or without modification,
 
 #include "DEROutstation.h"
 
+#include <opendnp3/ConsoleLogger.h>
+#include <opendnp3/master/PrintingSOEHandler.h>
+#include <opendnp3/outstation/UpdateBuilder.h>
+#include <opendnp3/channel/PrintingChannelListener.h>
+#include <opendnp3/outstation/DefaultOutstationApplication.h>
+
 using namespace der;
 
 void DEROutstation::CreateOutstation()
@@ -50,7 +56,9 @@ void DEROutstation::CreateOutstation()
 
 	// Specify what log levels to use. NORMAL is warning and above
 	// You can add all the comms logging by uncommenting below.
-	const uint32_t FILTERS = levels::ALL  ;
+	// const opendnp3::LogLevels FILTERS = levels::ALL;
+	const opendnp3::LogLevels FILTERS = levels::NORMAL;
+	
 
 	/* Find the number of cores on the machine */
 	uint32_t concurentThreadsSupported = std::thread::hardware_concurrency();
@@ -77,23 +85,30 @@ void DEROutstation::CreateOutstation()
 		std::cout << "Using certificate chain: " << certificateChain << std::endl;
 		std::cout << "Using private key file: " << privateKey << std::endl;
 
-		std::error_code ec;
-
-		channel = manager.AddTLSServer("server", FILTERS, ServerAcceptMode::CloseExisting, "0.0.0.0", 20000, TLSConfig(caCertificate, certificateChain, privateKey,2), PrintingChannelListener::Create(),ec);
+		channel = manager.AddTLSServer("server", FILTERS, ServerAcceptMode::CloseExisting, IPEndpoint("0.0.0.0", 20000), TLSConfig(caCertificate, certificateChain, privateKey,2), PrintingChannelListener::Create());
 	}
 	else
 	{
 		// Create a TCP server (listener)
 		std::cout << "Creating TCP Server" << std::endl;
-		channel = manager.AddTCPServer("server", FILTERS, ServerAcceptMode::CloseExisting, "0.0.0.0", 20000, PrintingChannelListener::Create());
+		channel = manager.AddTCPServer("server", FILTERS, ServerAcceptMode::CloseExisting, IPEndpoint("0.0.0.0", 20000), PrintingChannelListener::Create());
 	}
 
 	// The main object for a outstation. The defaults are useable,
 	// but understanding the options are important.
 	//OutstationStackConfig config(DatabaseSizes::AllTypes(10));
 
-	// Added the database size as per DER App Note 2018
-	OutstationStackConfig config(DatabaseSizes(329,0,1009,15,15,50,670,0,0));
+	// Number of each point type per DER App Note 2018
+	 // (DatabaseSizes(329, 0, 1009, 15, 15, 50, 670, 0, 0));
+	const uint16_t NUM_BINARY = 329;
+	const uint16_t NUM_ANALOG = 1009;
+	const uint16_t NUM_COUNTER = 15;
+	const uint16_t NUM_FROZEN_COUNTER = 15;
+	const uint16_t NUM_BINARY_OUTPUT_STATUS = 50;
+	const uint16_t NUM_ANALOG_OUTPUT_STATUS = 670;
+
+
+	OutstationStackConfig config;
 
 	// Specify the maximum size of the event buffers
 	//config.outstation.eventBufferConfig = EventBufferConfig::AllTypes(10);
@@ -114,49 +129,47 @@ void DEROutstation::CreateOutstation()
 	config.link.LocalAddr = 10;
 	config.link.RemoteAddr = 1;
 
-	config.link.KeepAliveTimeout = openpal::TimeDuration::Max();
+	config.link.KeepAliveTimeout = opendnp3::TimeDuration::Max();
 
 	// You can optionally change the default reporting variations or class assignment prior to enabling the outstation
 	//ConfigureDatabase(config.dbConfig);
 
 	//Mapping default event class, group and variation according to the DER App Note 2018 
-	for (int index = 0; index < config.dbConfig.aoStatus.Size(); ++index){
+	for (uint16_t index = 0; index < NUM_ANALOG_OUTPUT_STATUS; ++index){
 			if(AOPoints[index].Supported){
-				config.dbConfig.aoStatus[index].clazz = PointClass::Class0;
-				config.dbConfig.aoStatus[index].evariation = opendnp3::EventAnalogOutputStatusVariation::Group42Var1;
-				config.dbConfig.aoStatus[index].svariation = opendnp3::StaticAnalogOutputStatusVariation::Group40Var1;
+				config.database.analog_output_status[index].clazz = PointClass::Class0;
+				config.database.analog_output_status[index].evariation = opendnp3::EventAnalogOutputStatusVariation::Group42Var1;
+				config.database.analog_output_status[index].svariation = opendnp3::StaticAnalogOutputStatusVariation::Group40Var1;
 			}
 	}
 
-	for (int index = 0; index < config.dbConfig.boStatus.Size(); ++index){
+	for (int index = 0; index < NUM_BINARY_OUTPUT_STATUS; ++index){
 		if(BOPoints[index].Supported){
-			config.dbConfig.boStatus[index].clazz = BOPoints[index].DefEvtClass;
-			config.dbConfig.boStatus[index].evariation = opendnp3::EventBinaryOutputStatusVariation::Group11Var2;
-			config.dbConfig.boStatus[index].svariation = opendnp3::StaticBinaryOutputStatusVariation::Group10Var2;
+			config.database.binary_output_status[index].clazz = BOPoints[index].DefEvtClass;
+			config.database.binary_output_status[index].evariation = opendnp3::EventBinaryOutputStatusVariation::Group11Var2;
+			config.database.binary_output_status[index].svariation = opendnp3::StaticBinaryOutputStatusVariation::Group10Var2;
 		}
 	}
 
-	for (int index = 0; index < config.dbConfig.analog.Size(); ++index){
-		config.dbConfig.analog[index].clazz = AIPoints[index].DefEvtClass;
-		config.dbConfig.analog[index].evariation = opendnp3::EventAnalogVariation::Group32Var1;
-		config.dbConfig.analog[index].svariation = opendnp3::StaticAnalogVariation::Group30Var1;
+	for (int index = 0; index < NUM_ANALOG; ++index){
+		config.database.analog_input[index].clazz = AIPoints[index].DefEvtClass;
+		config.database.analog_input[index].evariation = opendnp3::EventAnalogVariation::Group32Var1;
+		config.database.analog_input[index].svariation = opendnp3::StaticAnalogVariation::Group30Var1;
 	}
 
-	for (int index = 0; index < config.dbConfig.binary.Size(); ++index){		
-		config.dbConfig.binary[index].clazz = BIPoints[index].DefEvtClass;
-		config.dbConfig.binary[index].evariation = opendnp3::EventBinaryVariation::Group2Var2;
-		config.dbConfig.binary[index].svariation = opendnp3::StaticBinaryVariation::Group1Var2;
+	for (int index = 0; index < NUM_BINARY; ++index){		
+		config.database.binary_input[index].clazz = BIPoints[index].DefEvtClass;
+		config.database.binary_input[index].evariation = opendnp3::EventBinaryVariation::Group2Var2;
+		config.database.binary_input[index].svariation = opendnp3::StaticBinaryVariation::Group1Var2;
 	}
 
 	/* Creating an instance of DERCommandHandler to pass it to the Outstation */
-	std::shared_ptr<DERCommandHandler> derCommand = std::make_shared<DERCommandHandler>(DERCommandHandler(DERCommandHandlerCallbackDefault::getInstance()));
-    std::shared_ptr<opendnp3::ICommandHandler> commandHandler = std::dynamic_pointer_cast<opendnp3::ICommandHandler>(derCommand);
+	auto derCommand = std::make_shared<DERCommandHandler>(DERCommandHandlerCallbackDefault::getInstance());    
 	
 	// Create a new outstation with a log level, command handler, and
 	// config info this	returns a thread-safe interface used for
-	// updating the outstation's database.
-	//outstation = channel->AddOutstation("DNP3 Outstation Communications Emulator", SuccessCommandHandler::Create(), DefaultOutstationApplication::Create(), config);
-	outstation = channel->AddOutstation("DNP3 Outstation Communications Emulator", commandHandler, DefaultOutstationApplication::Create(), config);
+	// updating the outstation's database.	
+	outstation = channel->AddOutstation("DNP3 Outstation Communications Emulator", derCommand, DefaultOutstationApplication::Create(), config);
 
 	// Enable the outstation and start communications
 	outstation->Enable();
@@ -231,7 +244,7 @@ void DEROutstation::AddUpdates(UpdateBuilder& builder, State& state, const std::
 			}
 		case('o'):
 			{
-				OctetString value(openpal::RSlice(&state.octetStringValue, 1));
+				OctetString value(opendnp3::Buffer(&state.octetStringValue, 1));
 				builder.Update(value, 0);
 				state.octetStringValue += 1;
 				break;
@@ -247,7 +260,7 @@ void DEROutstation::UpdateBinaryInputs(vector<BinaryValues> values){
 	int size = values.size();
 	
 	for (auto v : values){
-		builder.Update(Binary(v.val, v.quality), v.index);
+		builder.Update(Binary(v.val, Flags(v.quality)), v.index);
 	}
 	
 	outstation->Apply(builder.Build());
@@ -259,7 +272,7 @@ void DEROutstation::UpdateAnalogInputs(vector<AnalogValues> values){
 	for (auto v : values)
 	{
 		if(v.val >= AIPoints[v.index].MinValue && v.val <= AIPoints[v.index].MaxValue)
-			builder.Update(Analog(v.val, v.quality), v.index);
+			builder.Update(Analog(v.val, Flags(v.quality)), v.index);
 	}
 
 	outstation->Apply(builder.Build());
@@ -271,9 +284,9 @@ void DEROutstation::UpdateBinaryOutputs(vector<BinaryValues> values){
 	for (auto v : values)
 	{
 		if(BOPoints[v.index].Supported){
-			builder.Update(BinaryOutputStatus(v.val, v.quality), v.index);
+			builder.Update(BinaryOutputStatus(v.val, Flags(v.quality)), v.index);
 			//Update associated BinaryInput
-			builder.Update(Binary(v.val, v.quality) , BOPoints[v.index].MappedInput);
+			builder.Update(Binary(v.val, Flags(v.quality)) , BOPoints[v.index].MappedInput);
 		}
 	}
 	outstation->Apply(builder.Build());
@@ -286,9 +299,9 @@ void DEROutstation::UpdateAnalogOutputs(vector<AnalogValues> values){
 	{
 		if(AOPoints[v.index].Supported){
 			if(v.val >= AOPoints[v.index].MinValue && v.val <= AOPoints[v.index].MaxValue){
-				builder.Update(AnalogOutputStatus(v.val, v.quality), v.index);
+				builder.Update(AnalogOutputStatus(v.val, Flags(v.quality)), v.index);
 				//Update associated AnalogInput
-				builder.Update(Analog(v.val, v.quality),AOPoints[v.index].MappedInput);
+				builder.Update(Analog(v.val, Flags(v.quality)),AOPoints[v.index].MappedInput);
 			}
 		}
 	}
