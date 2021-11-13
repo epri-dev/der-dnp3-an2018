@@ -13,7 +13,7 @@ The easiest way to install openssl on Windows is using the binary distributions 
 
 ## Building the Outstation
 
-The application be built for any platform supported by OpenDNP3.
+The application can be built for any platform supported by OpenDNP3.
 
 The build uses [cmake](https://cmake.org/) to generate a platform-specific build file (e.g. makefile or visual studio solution)
 
